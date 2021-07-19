@@ -1,0 +1,6 @@
+resources:
+- labels:
+  - name: logstash-parser
+    value: 6c45fc4a5f4bd544d5c0
+  path: /home/vinhph2/dev/sidecar/example
+  type: configmap
