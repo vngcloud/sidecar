@@ -1,0 +1,153 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: logstash-test-parser
+  namespace: log-service
+  labels:
+    app: logstash-dfbbc5a0be696cdd3616-parser
+  annotations:
+    deployment.kubernetes.io/revision: '1'
+    reloader.stakater.com/auto: 'true'
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      exporter: exporter-parser
+      project-parser: dfbbc5a0be696cdd3616
+  template:
+    metadata:
+      name: logstash-dfbbc5a0be696cdd3616-parser
+      creationTimestamp: null
+      labels:
+        exporter: exporter-parser
+        project-parser: dfbbc5a0be696cdd3616
+    spec:
+      volumes:
+        - name: logstash-parser
+          configMap:
+            name: logstash-parser
+            items:
+              - key: logtash.conf
+                path: logtash.conf
+            defaultMode: 420
+        - name: logstash-yml-parser
+          configMap:
+            name: logstash-yml-parser
+            items:
+              - key: logstash.yml
+                path: logstash.yml
+            defaultMode: 420
+        - name: sidecar-config
+          configMap:
+            name: sidecar-parser
+            items:
+              - key: config.yaml
+                path: config.yaml
+            defaultMode: 420
+        - name: vng-trust
+          secret:
+            secretName: vng-trust
+            defaultMode: 420
+        - name: user-key
+          secret:
+            secretName: user-key-dfbbc5a0be696cdd3616-parser
+            defaultMode: 420
+        - name: shared-volume
+          emptyDir: {}
+      containers:
+        - name: logstash
+          image: 'docker.elastic.co/logstash/logstash:7.11.0'
+          command:
+            - bin/logstash
+          ports:
+            - name: logstash
+              containerPort: 9600
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: logstash-config-env-dfbbc5a0be696cdd3616-parser
+          resources: {}
+          volumeMounts:
+            - name: shared-volume
+              mountPath: /usr/share/logstash/config/conf.d
+            - name: logstash-parser
+              mountPath: /usr/share/logstash/config/conf.d/logtash.conf
+              subPath: logtash.conf
+            - name: logstash-yml-parser
+              mountPath: /usr/share/logstash/config/logstash.yml
+              subPath: logstash.yml
+            - name: vng-trust
+              mountPath: /usr/share/logstash/kafkacert/vng.trust
+              subPath: vng.trust
+            - name: user-key
+              mountPath: /usr/share/logstash/kafkacert/user.key
+              subPath: user.key
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: IfNotPresent
+        - name: exporter
+          image: wing924/logstash-exporter
+          command:
+            - /bin/sh
+          args:
+            - '-c'
+            - 'logstash-exporter --logstash.scrape-uri="http://127.0.0.1:9600"'
+          ports:
+            - name: exporter
+              containerPort: 9649
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+        - name: sidecar
+          image: 'vinhph2/sidecar:latest'
+          volumeMounts:
+            - name: shared-volume
+              mountPath: /usr/share/logstash/config/conf.d/
+            - name: sidecar-config
+              mountPath: /usr/share/sidecar/config/config.yaml
+              subPath: config.yaml
+          command:
+            - /bin/bash
+          args:
+            - '-c'
+            - 'sidecar -c /usr/share/sidecar/config/config.yaml -n log-service'
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          imagePullPolicy: Always
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      serviceAccountName: log-service
+      serviceAccount: log-service
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
+status:
+  observedGeneration: 1
+  replicas: 1
+  updatedReplicas: 1
+  readyReplicas: 1
+  availableReplicas: 1
+  conditions:
+    - type: Available
+      status: 'True'
+      lastUpdateTime: '2021-07-19T04:08:17Z'
+      lastTransitionTime: '2021-07-19T04:08:17Z'
+      reason: MinimumReplicasAvailable
+      message: Deployment has minimum availability.
+    - type: Progressing
+      status: 'True'
+      lastUpdateTime: '2021-07-19T04:08:17Z'
+      lastTransitionTime: '2021-07-19T04:07:01Z'
+      reason: NewReplicaSetAvailable
+      message: >-
+        ReplicaSet "logstash-dfbbc5a0be696cdd3616-parser-6949bb5bb7" has
+        successfully progressed.

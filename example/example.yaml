@@ -1,6 +1,15 @@
 resources:
 - labels:
   - name: logstash-parser
-    value: 6c45fc4a5f4bd544d5c0
-  path: /home/vinhph2/dev/sidecar/example
+    value: dfbbc5a0be696cdd3616
+  - name: config-type
+    value: parser-conf
+  path: "/home/vinhph2/dev/sidecar/example/1/1/1/1/1/1"
+  type: configmap
+- labels:
+  - name: logstash-parser
+    value: dfbbc5a0be696cdd3616
+  - name: config-type
+    value: parser-pattern
+  path: "/home/vinhph2/dev/sidecar/example"
   type: configmap
