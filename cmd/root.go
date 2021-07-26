@@ -32,8 +32,10 @@ var RootCmd = &cobra.Command{
 		)
 		Logger = Logger.With(zap.String("service", "sidecar"))
 		service.Logger = Logger.With(zap.String("package", "sidecar"))
-		err := service.Init(namespace, sleepTime, fileK8sConfig, fileConfig)
-		Logger.Error(err.Error())
+		err := service.Init(sleepTime, fileK8sConfig, fileConfig)
+		if err != nil {
+			Logger.Error(err.Error())
+		}
 		return err
 	},
 }
@@ -50,8 +52,6 @@ func Execute() {
 }
 
 func init() {
-	RootCmd.PersistentFlags().StringVarP(&namespace, "namepspace", "n", "", "k8s namespace. If you watch on all namespace, please ingnore this flag.")
-	RootCmd.PersistentFlags().StringVarP(&resource, "resource", "r", "configmap", "type of resource watching(configmap, secret or both)")
 	RootCmd.PersistentFlags().IntVarP(&sleepTime, "sleep-time", "T", 3, "How many seconds to next check")
 	RootCmd.PersistentFlags().StringVarP(&fileK8sConfig, "kube-config", "k", "", "Where is the file kubeconfig? If you run the application in pod, please ingnore this flag.")
 	RootCmd.PersistentFlags().StringVarP(&fileConfig, "config", "c", "", "file config to define resource to watch")

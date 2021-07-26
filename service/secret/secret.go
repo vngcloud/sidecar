@@ -8,6 +8,7 @@ import (
 
 	"go.uber.org/zap"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -16,9 +17,14 @@ var (
 	nilFileInfo = models.FileInfo{}
 )
 
-func WatchSecrets(k8sClient *kubernetes.Clientset, namepspace string, opt v1.ListOptions, path string, getFiles map[string]models.FileInfo) error {
-	secretClient := k8sClient.CoreV1().Secrets(namepspace)
-	secrets, err := secretClient.List(context.TODO(), opt)
+func ListSecrets(k8sClient *kubernetes.Clientset, resource models.Resource, getFiles map[string]models.FileInfo) error {
+	secretClient := k8sClient.CoreV1().Secrets(resource.Namespace)
+	labelset := make(map[string]string)
+	for _, label := range resource.Labels {
+		labelset[label.Name] = label.Value
+	}
+	listoption := v1.ListOptions{LabelSelector: labels.Set(labelset).String()}
+	secrets, err := secretClient.List(context.TODO(), listoption)
 	if err != nil {
 		Logger.Error(err.Error(), zap.String("method", "WatchSecrets"))
 		return err
@@ -28,10 +34,10 @@ func WatchSecrets(k8sClient *kubernetes.Clientset, namepspace string, opt v1.Lis
 		resourceVersion := item.ResourceVersion
 		resourceUID := item.UID
 		for name, contentBase64 := range item.Data {
-			fullName := path + "/" + name
-			if getFiles[fullName] != nilFileInfo {
-				Logger.Warn(fmt.Sprintf("Ingnore file %s in secret %s, resouce UID %s and resource version %s because file %s is exits.",
-					name, resourceName, resourceUID, resourceVersion, fullName), zap.String("method", "WatchSecrets"))
+			fullName := resource.Path + "/" + name
+			if getFiles[fullName].ResourceName != "" {
+				Logger.Warn(fmt.Sprintf("Ingnore file %s in namespace %s,secret %s, resouce UID %s and resource version %s because file %s is is already seen.",
+					resource.Namespace, name, resourceName, resourceUID, resourceVersion, fullName), zap.String("method", "WatchSecrets"))
 				continue
 			}
 			content, err := base64.StdEncoding.DecodeString(string(contentBase64))
@@ -43,7 +49,8 @@ func WatchSecrets(k8sClient *kubernetes.Clientset, namepspace string, opt v1.Lis
 				ResourceName:    resourceName,
 				ResourceUID:     resourceUID,
 				ResourceVersion: resourceVersion,
-				Content:         string(content),
+				Content:         content,
+				Namespace:       resource.Namespace,
 			}
 			getFiles[fullName] = file
 		}

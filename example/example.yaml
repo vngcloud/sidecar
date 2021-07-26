@@ -1,11 +1,13 @@
 resources:
-- labels:
+- type: both
+  path: "/home/vinhph2/dev/sidecar/example/1/1/1/1/1/1"   
+  labels:
   - name: logstash-parser
     value: dfbbc5a0be696cdd3616
   - name: config-type
     value: parser-conf
-  path: "/home/vinhph2/dev/sidecar/example/1/1/1/1/1/1"
-  type: configmap
+  namespace: log-service
+  method: get
 - labels:
   - name: logstash-parser
     value: dfbbc5a0be696cdd3616
@@ -13,3 +15,5 @@ resources:
     value: parser-pattern
   path: "/home/vinhph2/dev/sidecar/example"
   type: configmap
+  namespace: log-service
+  method: watch
