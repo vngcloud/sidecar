@@ -53,6 +53,8 @@ file config define resource to watch is yaml type with define as follow:
                 - `value`: value of label
                     - type: string
                     - require: true
+        - `script_inlines`: This is a list of command strings. They will excute after resource change. 
+            - type: list with each element is string
 ## Frequently Asked Questions
 
 If you have any question or insue please contact us at [support@vngcloud.vn](mailto:support@vngcloud.vn) or create new issue.

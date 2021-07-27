@@ -1,9 +1,11 @@
 package service
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"sidecar/models"
 	"sidecar/service/configmap"
 	"sidecar/service/secret"
@@ -54,7 +56,7 @@ func Init(sleepTime int, fileK8sConfig string, fileConfig string) error {
 		Logger.Error(err.Error(), zap.String("method", "Init"))
 		return err
 	}
-	for _, resource := range resources.Resources {
+	for i, resource := range resources.Resources {
 		err := validate.Struct(&resources)
 		if err != nil {
 			Logger.Error(err.Error(), zap.String("method", "Init"))
@@ -64,6 +66,7 @@ func Init(sleepTime int, fileK8sConfig string, fileConfig string) error {
 		if err != nil {
 			Logger.Warn(err.Error(), zap.String("method", "Init"))
 		}
+		resource.Index = i
 	}
 	configmap.Logger = Logger.With(zap.String("package", "configmap"))
 	secret.Logger = Logger.With(zap.String("package", "secret"))
@@ -110,7 +113,11 @@ func GetResource(resoures *models.Resources, k8sClient *kubernetes.Clientset) er
 			return err
 		}
 		Logger.Info(fmt.Sprintf("added file %s from namespace %s, resource name %s, resource UID %s and resource version %s",
-			fileInfo.Namespace, fileName, fileInfo.ResourceName, fileInfo.ResourceUID, fileInfo.ResourceVersion), zap.String("method", "GetResource"))
+			resoures.Resources[fileInfo.Index].Namespace, fileName, fileInfo.ResourceName, fileInfo.ResourceUID,
+			fileInfo.ResourceVersion), zap.String("method", "GetResource"))
+	}
+	for i := 0; i < count; i++ {
+		ExecInlines(resoures.Resources[i].ScriptInlines, i)
 	}
 	resoures.Resources = resoures.Resources[count:]
 	return nil
@@ -136,7 +143,7 @@ func WatchResource(resoures models.Resources, k8sClient *kubernetes.Clientset, s
 				}
 			}
 		}
-		err := DiffFiles(presentFiles, getFiles)
+		err := DiffFiles(resoures, presentFiles, getFiles)
 		if err != nil {
 			Logger.Error(err.Error(), zap.String("method", "WatchResource"))
 			return err
@@ -147,24 +154,27 @@ func WatchResource(resoures models.Resources, k8sClient *kubernetes.Clientset, s
 	return nil
 }
 
-func DiffFiles(oldFiles map[string]models.FileInfo, newFiles map[string]models.FileInfo) error {
+func DiffFiles(resoures models.Resources, oldFiles map[string]models.FileInfo, newFiles map[string]models.FileInfo) error {
+	checkResourceChange := make([]bool, len(resoures.Resources))
 	for fileName, fileInfo := range newFiles {
 		if oldFiles[fileName].ResourceName == "" {
+			checkResourceChange[fileInfo.Index] = true
 			err := WriteFile(fileName, fileInfo.Content)
 			if err != nil {
 				Logger.Error(err.Error(), zap.String("method", "DiffFiles"))
 				return err
 			}
 			Logger.Info(fmt.Sprintf("added file %s from namespace %s, resource name %s, resource UID %s and resource version %s",
-				fileInfo.Namespace, fileName, fileInfo.ResourceName, fileInfo.ResourceUID, fileInfo.ResourceVersion), zap.String("method", "DiffFiles"))
+				resoures.Resources[fileInfo.Index].Namespace, fileName, fileInfo.ResourceName, fileInfo.ResourceUID, fileInfo.ResourceVersion), zap.String("method", "DiffFiles"))
 		} else if oldFiles[fileName].ResourceUID != newFiles[fileName].ResourceUID || oldFiles[fileName].ResourceVersion != newFiles[fileName].ResourceVersion {
+			checkResourceChange[fileInfo.Index] = true
 			err := WriteFile(fileName, fileInfo.Content)
 			if err != nil {
 				Logger.Error(err.Error(), zap.String("method", "DiffFiles"))
 				return err
 			}
 			Logger.Info(fmt.Sprintf("modified file %s from resource namepace %s, name %s, resource UID %s resoruce version %s to resource version %s",
-				fileName, fileInfo.Namespace, fileInfo.ResourceName, fileInfo.ResourceUID, oldFiles[fileName].ResourceVersion, fileInfo.ResourceVersion), zap.String("method", "DiffFiles"))
+				fileName, resoures.Resources[fileInfo.Index].Namespace, fileInfo.ResourceName, fileInfo.ResourceUID, oldFiles[fileName].ResourceVersion, fileInfo.ResourceVersion), zap.String("method", "DiffFiles"))
 		}
 	}
 	for fileName, fileInfo := range oldFiles {
@@ -175,7 +185,12 @@ func DiffFiles(oldFiles map[string]models.FileInfo, newFiles map[string]models.F
 				return err
 			}
 			Logger.Info(fmt.Sprintf("deleted file %s from resource  namepace %s, name %s, resource UID %s and resource version %s",
-				fileName, fileInfo.Namespace, fileInfo.ResourceName, fileInfo.ResourceUID, fileInfo.ResourceVersion), zap.String("method", "DiffFiles"))
+				fileName, resoures.Resources[fileInfo.Index].Namespace, fileInfo.ResourceName, fileInfo.ResourceUID, fileInfo.ResourceVersion), zap.String("method", "DiffFiles"))
+		}
+	}
+	for i, resource := range resoures.Resources {
+		if checkResourceChange[i] {
+			ExecInlines(resource.ScriptInlines, i)
 		}
 	}
 	return nil
@@ -192,4 +207,20 @@ func WriteFile(fileName string, content []byte) error {
 		return err
 	}
 	return nil
+}
+
+func ExecInlines(script []string, index int) {
+	for i, command := range script {
+		cmd := exec.Command("/bin/bash", "-c", command)
+		var outb, errb bytes.Buffer
+		cmd.Stdout = &outb
+		cmd.Stderr = &errb
+		err := cmd.Run()
+		if err != nil {
+			Logger.Warn(fmt.Sprintf("something wrong when exec inline %d script in resource %d with error %s and sdtderr:\n %s",
+				i, index, err.Error(), errb.String()), zap.String("method", "ExecInlines"))
+			continue
+		}
+		Logger.Info(fmt.Sprintf("sdtdout when exec inline %d script in resource %d:\n%s", i, index, outb.String()), zap.String("method", "ExecInlines"))
+	}
 }

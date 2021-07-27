@@ -8,6 +8,8 @@ resources:
     value: parser-conf
   namespace: log-service
   method: get
+  script_inlines: 
+  - echo "vinhph2"
 - labels:
   - name: logstash-parser
     value: dfbbc5a0be696cdd3616

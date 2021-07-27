@@ -50,7 +50,7 @@ func ListSecrets(k8sClient *kubernetes.Clientset, resource models.Resource, getF
 				ResourceUID:     resourceUID,
 				ResourceVersion: resourceVersion,
 				Content:         content,
-				Namespace:       resource.Namespace,
+				Index:           resource.Index,
 			}
 			getFiles[fullName] = file
 		}

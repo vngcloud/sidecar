@@ -45,7 +45,7 @@ func ListConfigMaps(k8sClient *kubernetes.Clientset, resource models.Resource, g
 				ResourceUID:     resourceUID,
 				ResourceVersion: resourceVersion,
 				Content:         []byte(content),
-				Namespace:       resource.Namespace,
+				Index:           resource.Index,
 			}
 			getFiles[fullName] = file
 		}

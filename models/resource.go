@@ -9,11 +9,13 @@ type Label struct {
 	Value string `yaml:"value"`
 }
 type Resource struct {
-	Type      string  `yaml:"type" default:"configmap" validate:"oneof=configmap secret both"`
-	Path      string  `yaml:"path" default:"\tmp" validate:"dir"`
-	Labels    []Label `yaml:"labels" validate:"min=1"`
-	Method    string  `yaml:"method" default:"watch" validate:"oneof=watch get"`
-	Namespace string  `yaml:"namespace"`
+	Type          string   `yaml:"type" default:"configmap" validate:"oneof=configmap secret both"`
+	Path          string   `yaml:"path" default:"\tmp" validate:"dir"`
+	Labels        []Label  `yaml:"labels" validate:"min=1"`
+	Method        string   `yaml:"method" default:"watch" validate:"oneof=watch get"`
+	Namespace     string   `yaml:"namespace"`
+	ScriptInlines []string `yaml:"script_inlines"`
+	Index         int
 }
 type Resources struct {
 	Resources []Resource `yaml:"resources" validate:"min=1"`

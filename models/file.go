@@ -7,5 +7,5 @@ type FileInfo struct {
 	ResourceUID     types.UID
 	ResourceVersion string
 	Content         []byte
-	Namespace       string
+	Index           int
 }
