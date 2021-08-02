@@ -1,21 +1,31 @@
 resources:
-- type: both
-  path: "/home/vinhph2/dev/sidecar/example/1/1/1/1/1/1"   
-  labels:
-  - name: logstash-parser
-    value: dfbbc5a0be696cdd3616
-  - name: config-type
-    value: parser-conf
-  namespace: log-service
-  method: get
-  script_inlines: 
-  - echo "vinhph2"
 - labels:
   - name: logstash-parser
-    value: dfbbc5a0be696cdd3616
+    value: d8fc5d0abc6aded55575
   - name: config-type
-    value: parser-pattern
+    value: parser-conf
   path: "/home/vinhph2/dev/sidecar/example"
   type: configmap
   namespace: log-service
-  method: watch
+  script_inlines: 
+  - kill -SIGHUP $(ps -aux | grep /usr/share/logstash/jdk/bin/java | awk {'print $2'})
+- labels:
+  - name: logstash-parser
+    value: true
+  - name: config-type
+    value: parser-pattern
+  path: "/home/vinhph2/dev/sidecar/example/patterns"
+  type: configmap
+  namespace: log-service
+  script_inlines: 
+  - kill -SIGHUP $(ps -aux | grep /usr/share/logstash/jdk/bin/java | awk {'print $2'})
+- labels:
+  - name: logstash-parser
+    value:  d8fc5d0abc6aded55575
+  - name: config-type
+    value: parser-pattern
+  path: "/home/vinhph2/dev/sidecar/example/patterns"
+  type: configmap
+  namespace: log-service
+  script_inlines: 
+  - kill -SIGHUP $(ps -aux | grep /usr/share/logstash/jdk/bin/java | awk {'print $2'})

@@ -66,8 +66,9 @@ func Init(sleepTime int, fileK8sConfig string, fileConfig string) error {
 		if err != nil {
 			Logger.Warn(err.Error(), zap.String("method", "Init"))
 		}
-		resource.Index = i
+		resources.Resources[i].Index = i
 	}
+	//fmt.Println(resources.Resources)
 	configmap.Logger = Logger.With(zap.String("package", "configmap"))
 	secret.Logger = Logger.With(zap.String("package", "secret"))
 	err = GetResource(&resources, clientK8s)
@@ -193,6 +194,8 @@ func DiffFiles(resoures models.Resources, oldFiles map[string]models.FileInfo, n
 			ExecInlines(resource.ScriptInlines, i)
 		}
 	}
+	// fmt.Println(checkResourceChange)
+	// fmt.Println(resoures.Resources)
 	return nil
 }
 func WriteFile(fileName string, content []byte) error {

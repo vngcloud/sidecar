@@ -37,7 +37,7 @@ func ListConfigMaps(k8sClient *kubernetes.Clientset, resource models.Resource, g
 			fullName := resource.Path + "/" + name
 			if getFiles[fullName].ResourceName != "" {
 				Logger.Warn(fmt.Sprintf("Ingnore file %s in namesapce %s, configmap %s, resouce UID %s and resource version %s because file %s is already seen.",
-					resource.Namespace, name, resourceName, resourceUID, resourceVersion, fullName), zap.String("method", "WatchConfigMaps"))
+					name, resource.Namespace, resourceName, resourceUID, resourceVersion, fullName), zap.String("method", "WatchConfigMaps"))
 				continue
 			}
 			file := models.FileInfo{

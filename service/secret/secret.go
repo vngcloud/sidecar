@@ -37,7 +37,7 @@ func ListSecrets(k8sClient *kubernetes.Clientset, resource models.Resource, getF
 			fullName := resource.Path + "/" + name
 			if getFiles[fullName].ResourceName != "" {
 				Logger.Warn(fmt.Sprintf("Ingnore file %s in namespace %s,secret %s, resouce UID %s and resource version %s because file %s is is already seen.",
-					resource.Namespace, name, resourceName, resourceUID, resourceVersion, fullName), zap.String("method", "WatchSecrets"))
+					name, resource.Namespace, resourceName, resourceUID, resourceVersion, fullName), zap.String("method", "WatchSecrets"))
 				continue
 			}
 			content, err := base64.StdEncoding.DecodeString(string(contentBase64))
