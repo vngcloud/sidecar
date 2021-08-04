@@ -6,7 +6,7 @@ This is a docker container intended to run inside a kubernetes cluster to automa
 ## Quick Starts
 
 - [Example](./example/example.yaml)
-- [Image](https://hub.docker.com/repository/docker/vinhph2/sidecar)
+- [Image](https://hub.docker.com/r/vngcloud/sidecar)
 
 # Features
 
