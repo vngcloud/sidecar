@@ -1,5 +1,5 @@
 FROM ubuntu:18.04
-MAINTAINER vinhph2
+MAINTAINER vngcloud
 RUN apt-get update
 COPY sidecar /bin/sidecar
 ENTRYPOINT ["sidecar","-d"]

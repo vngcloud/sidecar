@@ -1,7 +1,7 @@
 
-# sidecar - automatic update, reload configmaps and secrets in running pod.
+# sidecar - automatic collect, update configmaps and secrets in running pod.
 
-This is a docker container intended to run inside a kubernetes cluster to collect config maps and secrets with specified labels and store the included files in an local folder. When using ConfigMap as a `subPath` volume mount, there will be no changes until the pod is manually restarted. Then if you want update config map and keep running pods this container will help you.
+This is a docker container intended to run inside a kubernetes cluster to automatic collect, update configmaps and secrets with specified labels and store the included files in an local folder. When using ConfigMap as a `subPath` volume mount, there will be no changes until the pod is manually restarted. Then if you want update config map and keep running pods this container will help you.
 
 ## Quick Starts
 
